@@ -42,7 +42,7 @@ A = opTomo('cuda', geom.proj, geom.vol); % opTomo projector from the astra toolb
 
 ref_col_poly = 48; % chosen reference energy, as the index of the bin, not in kev!
 
-iter_flag = 'lo'; % 'hi' or 'lo'
+num_iter = 100; % number of (inner) iterations ran for the methods
 
 
 %% Spectrum
@@ -107,13 +107,8 @@ options_gd = struct('is_logcorrected', true, 'gt', phant_gate_poly);
 
 GDBB_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_gd);
 
-if strcmpi(iter_flag, 'hi')
-    grad_iters = 1000;
-elseif strcmpi(iter_flag, 'lo')
-   grad_iters = 20; 
-else
-    error('Unknown iter_flag.')
-end
+grad_iters = num_iter;
+
 if strcmpi(time_run, 'yes')
     GDBB_class.calculate_errors = false;
     GDBB_class.verbose = false;
@@ -138,13 +133,8 @@ options_gd_tvmin = struct('is_logcorrected', true, 'is_regularized', true, ...
     'reg_method', 'tvmin', 'reg_lambda', 1, 'tv_beta', 1e-7 * max(mu(:, ref_col_poly)), 'gt', phant_gate_poly);
 GDBB_tvmin_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_gd_tvmin);
 
-if strcmpi(iter_flag, 'hi')
-    grad_iters = 1000;
-elseif strcmpi(iter_flag, 'lo')
-   grad_iters = 20; 
-else
-    error('Unknown iter_flag.')
-end
+grad_tvmin_iters = num_iter;
+
 if strcmpi(time_run, 'yes')
     GDBB_tvmin_class.calculate_errors = false;
     GDBB_tvmin_class.verbose = false;
@@ -153,7 +143,7 @@ else
 end
 GDBB_tvmin_class.grad_desc_line_search = 'bb';
 GDBB_tvmin_class.initialize;
-GDBB_tvmin_class.run_gradient_descent(grad_iters);
+GDBB_tvmin_class.run_gradient_descent(grad_tvmin_iters);
 
 if strcmpi(time_run, 'yes')
 end_tic_grad_desc_tvmin = toc(start_tic);
@@ -165,13 +155,10 @@ start_tic = tic;
 options_GNK = struct('is_logcorrected', true, 'gt', phant_gate_poly);
 GNK_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_GNK);
 
-if strcmpi(iter_flag, 'hi')
-    GNK_class.iters_newton = 200;
-elseif strcmpi(iter_flag, 'lo')
-    GNK_class.iters_newton = 4; 
-else
-    error('Unknown iter_flag.')
-end
+GNK_class.iters_minres = 5;
+
+GNK_class.iters_newton = floor(num_iter / GNK_class.iters_minres); % keeps the total number of minres as close as possible to, but not exceeding, num_iter
+
 if strcmpi(time_run, 'yes')
     GNK_class.calculate_errors = false;
     GNK_class.verbose = false;
@@ -179,7 +166,6 @@ else
     GNK_class.calculate_errors = true;
 end
 
-GNK_class.iters_minres = 5;
 GNK_class.initialize;
 GNK_class.run;
 
@@ -196,20 +182,15 @@ options_GNK_tvmin = struct('is_logcorrected', true, 'is_regularized', true, ...
     'reg_method', 'tvmin', 'reg_lambda', 1, 'tv_beta', 1e-7 * max(mu(:, ref_col_poly)), 'gt', phant_gate_poly);
 GNK_tvmin_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_GNK_tvmin);
 
-if strcmpi(iter_flag, 'hi')
-    GNK_tvmin_class.iters_newton = 200;
-elseif strcmpi(iter_flag, 'lo')
-    GNK_tvmin_class.iters_newton = 4; 
-else
-    error('Unknown iter_flag.')
-end
+GNK_tvmin_class.iters_minres = 5;
+GNK_tvmin_class.iters_newton = floor(num_iter / GNK_tvmin_class.iters_minres); % keeps the total number of minres as close as possible to, but not exceeding, num_iter
+
 if strcmpi(time_run, 'yes')
     GNK_tvmin_class.calculate_errors = false;
     GNK_tvmin_class.verbose = false;
 else
     GNK_tvmin_class.calculate_errors = true;
 end
-GNK_tvmin_class.iters_minres = 5;
 GNK_tvmin_class.initialize;
 GNK_tvmin_class.run;
 
@@ -220,20 +201,12 @@ end
 
 %% LBFGS
 start_tic = tic;
-if strcmpi(iter_flag, 'hi')
-    iters_bfgs = 1000;
-elseif strcmpi(iter_flag, 'lo')
-    iters_bfgs = 20; 
-else
-    error('Unknown iter_flag.')
-end
 
+iters_bfgs = num_iter;
 
 options_lbfgs = struct('is_logcorrected', true, 'is_regularized', false, ...
     'gt', phant_gate_poly, 'bfgs_line_search', 'backtracking', ...
     'bfgs_iters', iters_bfgs, 'bfgs_mem', 2);
-
-
 
 LBFGS_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), ...
     geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_lbfgs);
@@ -257,18 +230,12 @@ end
 
 %% LBFGS TVmin
 start_tic = tic;
-if strcmpi(iter_flag, 'hi')
-    iters_bfgs = 1000;
-elseif strcmpi(iter_flag, 'lo')
-    iters_bfgs = 20; 
-else
-    error('Unknown iter_flag.')
-end
+iters_bfgs_tvmin = num_iter; 
 
 options_lbfgs_reg_tvmin = struct('is_logcorrected', true, 'is_regularized', true, ...
     'reg_method', 'tvmin', 'reg_lambda', 1, 'tv_beta', 1e-7 * max(mu(:, ref_col_poly)), ...
     'gt', phant_gate_poly, 'bfgs_line_search', 'backtracking', ...
-    'bfgs_iters', iters_bfgs, 'bfgs_mem', 2);
+    'bfgs_iters', iters_bfgs_tvmin, 'bfgs_mem', 2);
 
 LBFGS_tvmin_class = AstraQuasiNewtonPoly(A, zeros(A.n, 1), ...
     geom.sino(:), geom.spect(:), mu, mu(:, ref_col_poly), options_lbfgs_reg_tvmin);
