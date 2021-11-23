@@ -42,7 +42,7 @@ A = opTomo('cuda', geom.proj, geom.vol); % opTomo projector from the astra toolb
 
 ref_col_poly = 48; % chosen reference energy, as the index of the bin, not in kev!
 
-num_iter = 100; % number of (inner) iterations ran for the methods
+num_iter = 20; % number of (inner) iterations ran for the methods
 
 
 %% Spectrum
