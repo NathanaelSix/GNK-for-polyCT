@@ -12,6 +12,5 @@ PiePhantomGATE.h5 contains a polychromatic Monte Carlo simulated CT dataset as w
 reconstruct_GATEdata_quasi_newton.m serves as an example on how to use the classes, reconstructing the dataset in PiePhantomGATE.h5.
 
 # Dependencies
-- MATLAB 
 - Astra toolbox (https://github.com/astra-toolbox/astra-toolbox)
 - Spot toolbox (https://github.com/mpf/spot)
