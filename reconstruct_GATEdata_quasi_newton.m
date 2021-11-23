@@ -5,7 +5,8 @@
 % Date: 22-11-2021
 % Author: Nathanael Six
 % Affiliation: imec-VisionLab, University of Antwerp, Belgium
-% contact: nathanael.six@uantwerpen.be
+% Contact: nathanael.six@uantwerpen.be
+% License: GPLv3
 
 
 %% read in data
